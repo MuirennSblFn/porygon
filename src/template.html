@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080b12">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<title>Console Porygon</title>
+<style>
+  :root {
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --surface-2: #f4f6fb;
+    --border: #d7dee9;
+    --border-strong: #b9c4d6;
+    --text: #12161f;
+    --text-dim: #5b6478;
+    --accent: #0e93a1;
+    --accent-soft: rgba(14,147,161,0.12);
+    --accent-2: #c93d78;
+    --accent-2-soft: rgba(201,61,120,0.12);
+    --good: #1f9d55;
+    --warn: #b9790a;
+    --crit: #d1453d;
+    --info: #6449d6;
+    --shadow: 0 1px 0 rgba(18,22,31,0.04);
+    --font-display: "Chakra Petch", "Segoe UI", sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #080b12;
+      --surface: #10141f;
+      --surface-2: #151b29;
+      --border: #223049;
+      --border-strong: #2e4165;
+      --text: #e7ecf5;
+      --text-dim: #8b96ad;
+      --accent: #4fd8e6;
+      --accent-soft: rgba(79,216,230,0.14);
+      --accent-2: #ff6fae;
+      --accent-2-soft: rgba(255,111,174,0.14);
+      --good: #56d98a;
+      --warn: #f0b84f;
+      --crit: #ff6b64;
+      --info: #a08bff;
+      --shadow: 0 1px 0 rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #080b12;
+    --surface: #10141f;
+    --surface-2: #151b29;
+    --border: #223049;
+    --border-strong: #2e4165;
+    --text: #e7ecf5;
+    --text-dim: #8b96ad;
+    --accent: #4fd8e6;
+    --accent-soft: rgba(79,216,230,0.14);
+    --accent-2: #ff6fae;
+    --accent-2-soft: rgba(255,111,174,0.14);
+    --good: #56d98a;
+    --warn: #f0b84f;
+    --crit: #ff6b64;
+    --info: #a08bff;
+    --shadow: 0 1px 0 rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(12px, 2.4vw, 28px);
+    gap: clamp(12px, 1.8vw, 18px);
+    position: relative;
+  }
+
+  /* ---------- boot sequence ---------- */
+  .boot {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    transition: opacity 0.5s ease;
+    cursor: pointer;
+  }
+  .boot.hidden { opacity: 0; pointer-events: none; }
+  .boot-lines p {
+    margin: 0 0 8px;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    opacity: 0;
+    animation: bootFade 0.4s ease forwards;
+  }
+  .boot-lines p:nth-child(1) { animation-delay: 0.05s; }
+  .boot-lines p:nth-child(2) { animation-delay: 0.45s; }
+  .boot-lines p:nth-child(3) { animation-delay: 0.9s; color: var(--text); }
+  @keyframes bootFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .boot-lines p { animation: none; opacity: 1; }
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    font-size: 1.5rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
+    letter-spacing: 0.04em;
+  }
+  .brand-sub {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+  }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--good);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    transition: background 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  /* ---------- layout ---------- */
+  .layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+    gap: clamp(12px, 1.8vw, 18px);
+    align-items: stretch;
+  }
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .panel::before, .panel::after {
+    content: "";
+    position: absolute;
+    width: 10px; height: 10px;
+    border-color: var(--accent);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .panel::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+  .panel::after { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+  /* ---------- viewport ---------- */
+  .viewport-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
+    min-width: 0;
+  }
+  .viewport {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    background:
+      radial-gradient(ellipse at 50% 30%, var(--accent-soft), transparent 65%),
+      var(--surface-2);
+  }
+  .viewport:active { cursor: grabbing; }
+  .viewport canvas { display: block; width: 100%; height: 100%; }
+  .viewport-hint {
+    position: absolute;
+    left: 12px; bottom: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    opacity: 0.8;
+    pointer-events: none;
+  }
+  .shiny-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .switch { position: relative; display: inline-flex; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch-track {
+    width: 38px; height: 20px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    transition: border-color 0.2s ease;
+  }
+  .switch-thumb {
+    width: 14px; height: 14px;
+    background: var(--text-dim);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .switch input:checked ~ .switch-track .switch-thumb {
+    transform: translateX(18px);
+    background: var(--accent-2);
+  }
+  .switch input:checked ~ .switch-track { border-color: var(--accent-2); }
+  .switch-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- control panel ---------- */
+  .control-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
+  .stats {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .stat-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .stat-bar {
+    height: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .stat-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.6s ease, background 0.4s ease;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  @media (max-width: 560px) {
+    .actions { grid-template-columns: repeat(2, 1fr); }
+  }
+  .action-btn {
+    background: var(--surface);
+    border: none;
+    padding: 16px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .action-btn:hover { background: var(--accent-soft); color: var(--accent); }
+  .action-btn:active { transform: translateY(1px); }
+  .action-btn:disabled { opacity: 0.4; cursor: default; background: var(--surface); color: var(--text); }
+  .action-icon { font-size: 1.3rem; line-height: 1; }
+  .action-sub {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-dim);
+    margin-top: -4px;
+  }
+
+  /* ---------- progression (level / xp / evolution) ---------- */
+  .level-block {
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .level-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .level-badge {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+  .evo-badge {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 6px;
+  }
+  .xp-value {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .xp-fill { background: var(--accent-2); }
+
+  /* ---------- recalibration mini-game ---------- */
+  /* fixed (not absolute) so a mini-jeu modal is always centered in the actual
+     visible screen, regardless of how far the page is scrolled when opened —
+     the panel lives in the DOM inside #viewport but must not be clipped by
+     its overflow:hidden nor pinned to its (possibly off-screen) box. */
+  .recal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 10, 16, 0.6);
+    backdrop-filter: blur(2px);
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .recal-overlay[hidden] { display: none; }
+  .recal-panel {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    padding: 18px 20px;
+    width: min(100%, 340px);
+    max-height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .recal-head {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-align: center;
+  }
+  .recal-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: -8px;
+  }
+  .recal-track {
+    position: relative;
+    height: 36px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .recal-zone {
+    position: absolute;
+    top: -1px; bottom: -1px;
+    background: var(--accent-soft);
+    border-left: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    pointer-events: none;
+  }
+  .recal-marker {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    width: 3px;
+    background: var(--accent-2);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .recal-result {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+    min-height: 1.2em;
+    color: var(--accent);
+  }
+  .recal-controls { display: flex; gap: 10px; }
+  .recal-btn {
+    flex: 1;
+    padding: 12px 8px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .recal-btn-primary { background: var(--accent); color: #04121a; border-color: var(--accent); }
+  .recal-btn:active { transform: translateY(1px); }
+  .recal-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ---------- mini-jeux hub ---------- */
+  .games-hub-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .games-hub-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .games-hub-item:last-child { border-bottom: none; }
+  .games-hub-icon { font-size: 1.3rem; width: 26px; text-align: center; flex-shrink: 0; color: var(--accent); }
+  .games-hub-info { flex: 1; min-width: 0; }
+  .games-hub-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .games-hub-desc { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+  .games-hub-charges { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-dim); margin-top: 4px; }
+  .games-hub-play {
+    padding: 8px 12px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  .games-hub-play:disabled { opacity: 0.35; cursor: default; }
+  .games-hub-play:not(:disabled):hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- memoire de signal ---------- */
+  .mem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mem-pad {
+    aspect-ratio: 1.15 / 1;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.12s ease, transform 0.08s ease;
+    opacity: 0.5;
+  }
+  .mem-pad.lit { opacity: 1; }
+  .mem-pad[data-pad="0"].lit { background: var(--accent); }
+  .mem-pad[data-pad="1"].lit { background: var(--accent-2); }
+  .mem-pad[data-pad="2"].lit { background: var(--warn); }
+  .mem-pad[data-pad="3"].lit { background: var(--good); }
+  .mem-pad[data-pad="4"].lit { background: var(--crit); }
+  .mem-pad[data-pad="5"].lit { background: var(--info); }
+  .mem-pad:active { transform: translateY(1px); }
+  .mem-pad:disabled { cursor: default; }
+  .mem-status { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-dim); text-align: center; }
+
+  /* ---------- reflexes / capture de donnees ---------- */
+  .reflex-area {
+    position: relative;
+    height: 150px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  .reflex-target {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    border: 1px solid var(--accent);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #04121a;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .reflex-target.reflex-decoy {
+    background: var(--crit);
+    border-radius: 6px;
+    border-color: var(--crit);
+  }
+  .reflex-target.reflex-decoy::after { content: "\2715"; }
+  .reflex-status { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-dim); text-align: center; }
+
+  /* ---------- puzzle de circuit ---------- */
+  .circuit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--border);
+    width: 168px;
+    margin: 0 auto;
+  }
+  .circuit-tile { position: relative; aspect-ratio: 1 / 1; background: var(--surface-2); overflow: hidden; }
+  .circuit-tile.interactive { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .circuit-tile-inner { position: absolute; inset: 0; transition: transform 0.16s ease; }
+  .circuit-bar { position: absolute; background: var(--text-dim); }
+  .circuit-bar.top { top: 0; left: calc(50% - 3px); width: 6px; height: 52%; }
+  .circuit-bar.bottom { bottom: 0; left: calc(50% - 3px); width: 6px; height: 52%; }
+  .circuit-bar.left { left: 0; top: calc(50% - 3px); height: 6px; width: 52%; }
+  .circuit-bar.right { right: 0; top: calc(50% - 3px); height: 6px; width: 52%; }
+  .circuit-tile.interactive .circuit-bar { background: var(--accent); }
+  .circuit-tile.anchor .circuit-bar { background: var(--good); }
+  .circuit-tile.solved .circuit-bar { background: var(--good); }
+  .circuit-tile-dot { position: absolute; top: calc(50% - 4px); left: calc(50% - 4px); width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+
+  .log-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 140px;
+    padding: 14px 16px;
+  }
+  .log-head {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .log-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-dim);
+    overflow-y: auto;
+  }
+  .log-list li { display: flex; gap: 8px; }
+  .log-list time { color: var(--accent); flex-shrink: 0; }
+  .log-empty { color: var(--text-dim); opacity: 0.7; }
+
+  ::selection { background: var(--accent-soft); }
+
+  button:focus-visible, input:focus-visible, .switch:focus-within .switch-track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stat-fill { transition: none; }
+    .boot { transition: none; }
+  }
+
+  /* ---------- mobile / tablet refinements ---------- */
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+  .stage {
+    padding-left: max(clamp(12px, 2.4vw, 28px), env(safe-area-inset-left));
+    padding-right: max(clamp(12px, 2.4vw, 28px), env(safe-area-inset-right));
+    padding-bottom: max(clamp(12px, 2.4vw, 28px), env(safe-area-inset-bottom));
+    padding-top: max(clamp(12px, 2.4vw, 28px), env(safe-area-inset-top));
+  }
+  .action-btn, .action-btn * { -webkit-tap-highlight-color: transparent; }
+  .action-btn { min-height: 64px; touch-action: manipulation; }
+  .switch, .switch * { touch-action: manipulation; }
+  @media (max-width: 480px) {
+    .viewport-panel { min-height: 300px; }
+    .brand-mark { font-size: 1.3rem; }
+    .status-pill { font-size: 0.72rem; padding: 6px 10px; }
+    .action-btn { padding: 14px 4px; font-size: 0.72rem; }
+    .action-icon { font-size: 1.15rem; }
+    .viewport-hint { font-size: 0.62rem; left: 8px; bottom: 8px; }
+  }
+  @media (min-width: 620px) and (max-width: 1024px) and (orientation: portrait) {
+    .viewport-panel { min-height: 46vh; }
+  }
+  @media (hover: none) and (pointer: coarse) {
+    .action-btn:hover { background: var(--surface); color: var(--text); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="boot" id="boot">
+    <div class="boot-lines">
+      <p>&gt; initialisation du module...</p>
+      <p>&gt; chargement de l'unite #137...</p>
+      <p>&gt; signal etabli — bienvenue.</p>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">&#9671;</span>
+      <div class="brand-text">
+        <span class="brand-title">PORYGON</span>
+        <span class="brand-sub">Unite #137 &middot; Console de soin</span>
+      </div>
+    </div>
+    <div class="status-pill">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusLabel">Lecture du signal...</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel viewport-panel">
+      <div class="viewport" id="viewport">
+        <canvas id="canvas"></canvas>
+        <span class="viewport-hint">glisser pour faire pivoter</span>
+        <div class="recal-overlay" id="gamesOverlay" hidden>
+          <div class="recal-panel">
+            <div class="recal-head">Mini-jeux</div>
+            <div class="recal-hint">Choisissez un protocole a executer</div>
+            <div class="games-hub-list" id="gamesHubList"></div>
+            <div class="recal-controls">
+              <button class="recal-btn" id="gamesCloseBtn">Fermer</button>
+            </div>
+          </div>
+        </div>
+        <div class="recal-overlay" id="recalOverlay" hidden>
+          <div class="recal-panel">
+            <div class="recal-head">Recalibrage du signal</div>
+            <div class="recal-hint">Stabilisez le marqueur dans la zone ciblee</div>
+            <div class="recal-track" id="recalTrack">
+              <div class="recal-zone" id="recalZone"></div>
+              <div class="recal-marker" id="recalMarker"></div>
+            </div>
+            <div class="recal-result" id="recalResult">&nbsp;</div>
+            <div class="recal-controls">
+              <button class="recal-btn" id="recalCloseBtn">Annuler</button>
+              <button class="recal-btn recal-btn-primary" id="recalHitBtn">Stabiliser</button>
+            </div>
+          </div>
+        </div>
+        <div class="recal-overlay" id="memoryOverlay" hidden>
+          <div class="recal-panel">
+            <div class="recal-head">Memoire de signal</div>
+            <div class="recal-hint" id="memoryHint">Observez la sequence, puis reproduisez-la</div>
+            <div class="mem-grid">
+              <button class="mem-pad" data-pad="0"></button>
+              <button class="mem-pad" data-pad="1"></button>
+              <button class="mem-pad" data-pad="2"></button>
+              <button class="mem-pad" data-pad="3"></button>
+              <button class="mem-pad" data-pad="4"></button>
+              <button class="mem-pad" data-pad="5"></button>
+            </div>
+            <div class="mem-status" id="memoryStatus">Sequence : 0</div>
+            <div class="recal-result" id="memoryResult">&nbsp;</div>
+            <div class="recal-controls">
+              <button class="recal-btn" id="memoryCloseBtn">Annuler</button>
+              <button class="recal-btn recal-btn-primary" id="memoryStartBtn">Lancer</button>
+            </div>
+          </div>
+        </div>
+        <div class="recal-overlay" id="reflexOverlay" hidden>
+          <div class="recal-panel">
+            <div class="recal-head">Capture de donnees</div>
+            <div class="recal-hint">Touchez les fragments avant qu'ils ne disparaissent</div>
+            <div class="reflex-area" id="reflexArea"></div>
+            <div class="reflex-status" id="reflexStatus">Prêt</div>
+            <div class="stat-bar"><div class="stat-fill" id="reflexTimerFill"></div></div>
+            <div class="recal-result" id="reflexResult">&nbsp;</div>
+            <div class="recal-controls">
+              <button class="recal-btn" id="reflexCloseBtn">Annuler</button>
+              <button class="recal-btn recal-btn-primary" id="reflexStartBtn">Lancer</button>
+            </div>
+          </div>
+        </div>
+        <div class="recal-overlay" id="circuitOverlay" hidden>
+          <div class="recal-panel">
+            <div class="recal-head">Puzzle de circuit</div>
+            <div class="recal-hint">Faites pivoter les segments pour relier le circuit</div>
+            <div class="circuit-grid" id="circuitGrid"></div>
+            <div class="stat-bar"><div class="stat-fill" id="circuitTimerFill"></div></div>
+            <div class="recal-result" id="circuitResult">&nbsp;</div>
+            <div class="recal-controls">
+              <button class="recal-btn" id="circuitCloseBtn">Annuler</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="shiny-toggle">
+        <label class="switch">
+          <input type="checkbox" id="shinyToggle">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </label>
+        <span class="switch-label" id="shinyLabel">Forme normale</span>
+      </div>
+    </section>
+
+    <aside class="panel control-panel">
+      <div class="stats">
+        <div class="level-block">
+          <div class="level-head">
+            <span class="level-badge" id="levelBadge">NIV. 1</span>
+            <span class="evo-badge" id="evoBadge">PORYGON</span>
+            <span class="xp-value" id="xpValue">0/70 XP</span>
+          </div>
+          <div class="stat-bar"><div class="stat-fill xp-fill" id="xpFill"></div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-head"><span class="stat-name">Faim</span><span class="stat-value" id="hungerValue">--</span></div>
+          <div class="stat-bar"><div class="stat-fill" id="hungerFill"></div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-head"><span class="stat-name">Bonheur</span><span class="stat-value" id="happyValue">--</span></div>
+          <div class="stat-bar"><div class="stat-fill" id="happyFill"></div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-head"><span class="stat-name">Proprete</span><span class="stat-value" id="cleanValue">--</span></div>
+          <div class="stat-bar"><div class="stat-fill" id="cleanFill"></div></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="action-btn" id="feedBtn" title="Nourrir">
+          <span class="action-icon">&#9633;</span>
+          <span class="action-text">Nourrir</span>
+        </button>
+        <button class="action-btn" id="playBtn" title="Jouer">
+          <span class="action-icon">&#10022;</span>
+          <span class="action-text">Jouer</span>
+        </button>
+        <button class="action-btn" id="cleanBtn" title="Nettoyer">
+          <span class="action-icon">&#9678;</span>
+          <span class="action-text">Nettoyer</span>
+        </button>
+        <button class="action-btn" id="gamesBtn" title="Mini-jeux">
+          <span class="action-icon">&#9638;</span>
+          <span class="action-text">Mini-jeux</span>
+          <span class="action-sub" id="gamesCharges">12/12</span>
+        </button>
+      </div>
+
+      <div class="log-panel">
+        <div class="log-head">Journal</div>
+        <ul class="log-list" id="logList"><li class="log-empty">Aucune activite pour le moment.</li></ul>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script type="application/json" id="asset-data">__ASSET_JSON__</script>
+
+<script>
+__THREE_GLOBAL_JS__
+</script>
+
+<script>
+const THREE = window.THREE;
+
+/* ================= helpers ================= */
+function b64ToFloat32(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Float32Array(bytes.buffer);
+}
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function clamp01to100(v) { return Math.max(0, Math.min(100, v)); }
+const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let nightMode = false;
+let wakePulse = 0;
+
+const ASSET = JSON.parse(document.getElementById('asset-data').textContent);
+
+/* ================= boot sequence ================= */
+const bootEl = document.getElementById('boot');
+function hideBoot() {
+  bootEl.classList.add('hidden');
+  setTimeout(() => bootEl.remove(), 550);
+}
+if (prefersReducedMotion) {
+  hideBoot();
+} else {
+  setTimeout(hideBoot, 1500);
+}
+bootEl.addEventListener('click', hideBoot);
+
+/* ================= state / persistence ================= */
+const STORAGE_KEY = 'porygon-care-v1';
+const DECAY_PER_MIN = { hunger: 1 / 3, happy: 1 / 5, clean: 1 / 6 };
+const NIGHT_DECAY_MULT = 0.45;
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function isNightHour(h) { return h >= 22 || h < 7; }
+
+function loadState() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) {}
+  if (!s || typeof s !== 'object') {
+    s = { hunger: 82, happy: 82, clean: 82, shiny: false, last: Date.now(), log: [] };
+  }
+  if (typeof s.xp !== 'number') s.xp = 0;
+  if (typeof s.level !== 'number') s.level = 1;
+  if (typeof s.evoStage !== 'number') s.evoStage = 0;
+  if (typeof s.lastEventAt !== 'number') s.lastEventAt = Date.now();
+  // gameCharges: one daily charge pool per mini-jeu (recalibration + the newer ones);
+  // migrated from the older single-game recalCharges/recalDate shape when present.
+  if (!s.gameCharges || typeof s.gameCharges !== 'object') {
+    s.gameCharges = { recal: typeof s.recalCharges === 'number' ? s.recalCharges : 3, memory: 3, reflex: 3, circuit: 3 };
+    s.gameDate = typeof s.recalDate === 'string' ? s.recalDate : todayStr();
+  }
+  ['recal', 'memory', 'reflex', 'circuit'].forEach((k) => { if (typeof s.gameCharges[k] !== 'number') s.gameCharges[k] = 3; });
+  if (typeof s.gameDate !== 'string') s.gameDate = todayStr();
+  if (s.gameDate !== todayStr()) {
+    s.gameDate = todayStr();
+    s.gameCharges = { recal: 3, memory: 3, reflex: 3, circuit: 3 };
+  }
+  const elapsedMin = Math.max(0, Math.min(60 * 24 * 3, (Date.now() - s.last) / 60000));
+  if (elapsedMin > 0.05) {
+    const mult = isNightHour(new Date().getHours()) ? NIGHT_DECAY_MULT : 1;
+    s.hunger = clamp01to100(s.hunger - DECAY_PER_MIN.hunger * elapsedMin * mult);
+    s.happy = clamp01to100(s.happy - DECAY_PER_MIN.happy * elapsedMin * mult);
+    s.clean = clamp01to100(s.clean - DECAY_PER_MIN.clean * elapsedMin * mult);
+  }
+  s.last = Date.now();
+  if (!Array.isArray(s.log)) s.log = [];
+  return s;
+}
+const state = loadState();
+function saveState() {
+  state.last = Date.now();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function pushLog(text) {
+  state.log.unshift({ t: Date.now(), text });
+  state.log = state.log.slice(0, 6);
+}
+
+/* ================= progression (XP / niveaux / evolution) ================= */
+const EVO_NAMES = ['PORYGON', 'PORYGON2 [SIM]', 'PORYGON-Z [SIM]'];
+function xpNeeded(level) { return Math.round(70 + (level - 1) * 30); }
+function evoStageForLevel(level) { return level >= 12 ? 2 : level >= 5 ? 1 : 0; }
+function awardXP(amount) {
+  state.xp += amount;
+  let leveled = false;
+  while (state.xp >= xpNeeded(state.level)) {
+    state.xp -= xpNeeded(state.level);
+    state.level += 1;
+    leveled = true;
+    pushLog('Niveau ' + state.level + ' atteint !');
+    playReaction('levelup');
+    burst(cssVar('--accent') || '#4fd8e6');
+  }
+  if (leveled) {
+    const newStage = evoStageForLevel(state.level);
+    if (newStage !== state.evoStage) {
+      state.evoStage = newStage;
+      pushLog('Mise a niveau : ' + EVO_NAMES[newStage] + ' installe (simulation)');
+      burst(cssVar('--accent-2') || '#ff6fae');
+    }
+  }
+}
+
+/* ================= UI refs ================= */
+const el = {
+  hungerFill: document.getElementById('hungerFill'),
+  hungerValue: document.getElementById('hungerValue'),
+  happyFill: document.getElementById('happyFill'),
+  happyValue: document.getElementById('happyValue'),
+  cleanFill: document.getElementById('cleanFill'),
+  cleanValue: document.getElementById('cleanValue'),
+  statusDot: document.getElementById('statusDot'),
+  statusLabel: document.getElementById('statusLabel'),
+  logList: document.getElementById('logList'),
+  shinyToggle: document.getElementById('shinyToggle'),
+  shinyLabel: document.getElementById('shinyLabel'),
+  feedBtn: document.getElementById('feedBtn'),
+  playBtn: document.getElementById('playBtn'),
+  cleanBtn: document.getElementById('cleanBtn'),
+  viewport: document.getElementById('viewport'),
+  levelBadge: document.getElementById('levelBadge'),
+  evoBadge: document.getElementById('evoBadge'),
+  xpValue: document.getElementById('xpValue'),
+  xpFill: document.getElementById('xpFill'),
+  gamesBtn: document.getElementById('gamesBtn'),
+  gamesCharges: document.getElementById('gamesCharges'),
+  gamesOverlay: document.getElementById('gamesOverlay'),
+  gamesHubList: document.getElementById('gamesHubList'),
+  gamesCloseBtn: document.getElementById('gamesCloseBtn'),
+  recalOverlay: document.getElementById('recalOverlay'),
+  recalTrack: document.getElementById('recalTrack'),
+  recalZone: document.getElementById('recalZone'),
+  recalMarker: document.getElementById('recalMarker'),
+  recalResult: document.getElementById('recalResult'),
+  recalHitBtn: document.getElementById('recalHitBtn'),
+  recalCloseBtn: document.getElementById('recalCloseBtn'),
+  memoryOverlay: document.getElementById('memoryOverlay'),
+  memoryHint: document.getElementById('memoryHint'),
+  memoryStatus: document.getElementById('memoryStatus'),
+  memoryResult: document.getElementById('memoryResult'),
+  memoryStartBtn: document.getElementById('memoryStartBtn'),
+  memoryCloseBtn: document.getElementById('memoryCloseBtn'),
+  memoryPads: Array.from(document.querySelectorAll('.mem-pad')),
+  reflexOverlay: document.getElementById('reflexOverlay'),
+  reflexArea: document.getElementById('reflexArea'),
+  reflexStatus: document.getElementById('reflexStatus'),
+  reflexTimerFill: document.getElementById('reflexTimerFill'),
+  reflexResult: document.getElementById('reflexResult'),
+  reflexStartBtn: document.getElementById('reflexStartBtn'),
+  reflexCloseBtn: document.getElementById('reflexCloseBtn'),
+  circuitOverlay: document.getElementById('circuitOverlay'),
+  circuitGrid: document.getElementById('circuitGrid'),
+  circuitTimerFill: document.getElementById('circuitTimerFill'),
+  circuitResult: document.getElementById('circuitResult'),
+  circuitCloseBtn: document.getElementById('circuitCloseBtn'),
+};
+
+function statColor(v) {
+  if (v >= 55) return 'var(--good)';
+  if (v >= 28) return 'var(--warn)';
+  return 'var(--crit)';
+}
+
+function updateUI() {
+  el.hungerFill.style.width = state.hunger.toFixed(0) + '%';
+  el.hungerFill.style.background = statColor(state.hunger);
+  el.hungerValue.textContent = state.hunger.toFixed(0);
+
+  el.happyFill.style.width = state.happy.toFixed(0) + '%';
+  el.happyFill.style.background = statColor(state.happy);
+  el.happyValue.textContent = state.happy.toFixed(0);
+
+  el.cleanFill.style.width = state.clean.toFixed(0) + '%';
+  el.cleanFill.style.background = statColor(state.clean);
+  el.cleanValue.textContent = state.clean.toFixed(0);
+
+  const avg = (state.hunger + state.happy + state.clean) / 3;
+  let label, dotColor;
+  if (nightMode) { label = 'Mode veille'; dotColor = 'var(--text-dim)'; }
+  else if (avg >= 80) { label = 'Signal optimal'; dotColor = 'var(--good)'; }
+  else if (avg >= 55) { label = 'Signal stable'; dotColor = 'var(--good)'; }
+  else if (avg >= 28) { label = 'Signal instable'; dotColor = 'var(--warn)'; }
+  else { label = 'Signal critique'; dotColor = 'var(--crit)'; }
+  el.statusLabel.textContent = label;
+  el.statusDot.style.background = dotColor;
+
+  el.shinyToggle.checked = !!state.shiny;
+  el.shinyLabel.textContent = state.shiny ? 'Forme chromatique' : 'Forme normale';
+
+  el.levelBadge.textContent = 'NIV. ' + state.level;
+  el.evoBadge.textContent = EVO_NAMES[state.evoStage];
+  const need = xpNeeded(state.level);
+  el.xpValue.textContent = Math.floor(state.xp) + '/' + need + ' XP';
+  el.xpFill.style.width = Math.min(100, (state.xp / need) * 100).toFixed(0) + '%';
+
+  const totalCharges = state.gameCharges.recal + state.gameCharges.memory + state.gameCharges.reflex + state.gameCharges.circuit;
+  el.gamesCharges.textContent = totalCharges + '/12';
+  el.gamesBtn.disabled = totalCharges <= 0;
+  renderGamesHub();
+
+  if (state.log.length === 0) {
+    el.logList.innerHTML = '<li class="log-empty">Aucune activite pour le moment.</li>';
+  } else {
+    el.logList.innerHTML = state.log.map(entry => {
+      const d = new Date(entry.t);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `<li><time>${hh}:${mm}</time><span>${entry.text}</span></li>`;
+    }).join('');
+  }
+}
+
+/* ================= three.js scene ================= */
+const canvas = document.getElementById('canvas');
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(new THREE.Color(cssVar('--bg') || '#080b12'), 3.2, 8.5);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
+camera.position.set(0, 0.25, 4.3);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+
+let lastW = -1, lastH = -1;
+function resize() {
+  const w = Math.round(el.viewport.clientWidth) || 300;
+  const h = Math.round(el.viewport.clientHeight) || 300;
+  if (w === lastW && h === lastH) return; // avoid redundant setSize -> layout feedback loops
+  lastW = w; lastH = h;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(el.viewport);
+resize();
+
+/* lights — the source texture already bakes its own per-facet shading, so we
+   keep dynamic lighting mostly flat/ambient and let the texture colors read
+   true, with only a light touch of directional form and colored rim accent. */
+scene.add(new THREE.HemisphereLight(0xffffff, 0xa8b0c0, 1.25));
+const keyLight = new THREE.DirectionalLight(0xffffff, 0.45);
+keyLight.position.set(2.4, 3.2, 2.2);
+scene.add(keyLight);
+const rimLight = new THREE.PointLight(new THREE.Color(cssVar('--accent') || '#4fd8e6'), 1.3, 9);
+rimLight.position.set(-2.2, 1.1, -2.0);
+scene.add(rimLight);
+const fillLight = new THREE.PointLight(new THREE.Color(cssVar('--accent-2') || '#ff6fae'), 0.7, 9);
+fillLight.position.set(2.0, -1.0, 1.6);
+scene.add(fillLight);
+
+/* grid floor */
+const grid = new THREE.GridHelper(9, 36, new THREE.Color(cssVar('--accent') || '#4fd8e6'), new THREE.Color(cssVar('--accent') || '#4fd8e6'));
+grid.position.y = -1.25;
+grid.material.transparent = true;
+grid.material.opacity = 0.22;
+scene.add(grid);
+
+/* model group */
+const group = new THREE.Group();
+scene.add(group);
+let bodyMesh = null, eyeMesh = null;
+const loader = new THREE.TextureLoader();
+
+function makeTexture(b64, srgb) {
+  const tex = loader.load('data:image/png;base64,' + b64);
+  tex.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+function buildGeometry(part) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(b64ToFloat32(part.pos), 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(b64ToFloat32(part.nor), 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(b64ToFloat32(part.uv), 2));
+  return geo;
+}
+
+let eyeColorTex = null, eyeMat = null;
+function buildModel(variant) {
+  const tex = ASSET.textures[variant];
+  if (bodyMesh) { group.remove(bodyMesh); bodyMesh.geometry.dispose(); bodyMesh.material.dispose(); }
+  if (eyeMesh) { group.remove(eyeMesh); eyeMesh.geometry.dispose(); eyeMesh.material.dispose(); }
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    map: makeTexture(tex.body, true),
+    normalMap: makeTexture(tex.bodyNor, false),
+    normalScale: new THREE.Vector2(0.35, 0.35),
+    roughness: 0.7,
+    metalness: 0.04,
+  });
+  eyeColorTex = makeTexture(tex.eye, true);
+  eyeMat = new THREE.MeshStandardMaterial({
+    map: eyeColorTex,
+    normalMap: makeTexture(tex.eyeNor, false),
+    normalScale: new THREE.Vector2(0.35, 0.35),
+    roughness: 0.4,
+    metalness: 0.04,
+  });
+
+  bodyMesh = new THREE.Mesh(buildGeometry(ASSET.body), bodyMat);
+  eyeMesh = new THREE.Mesh(buildGeometry(ASSET.eye), eyeMat);
+  group.add(bodyMesh, eyeMesh);
+}
+buildModel(state.shiny ? 'shiny' : 'normal');
+
+/* drag to orbit */
+let dragging = false, lastX = 0, lastY = 0;
+let rotY = 0.3, rotX = 0.06, spin = 0.12;
+el.viewport.addEventListener('pointerdown', (e) => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  el.viewport.setPointerCapture(e.pointerId);
+});
+el.viewport.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  rotY += dx * 0.008;
+  rotX = Math.min(0.55, Math.max(-0.35, rotX + dy * 0.005));
+});
+window.addEventListener('pointerup', () => { dragging = false; });
+
+/* reactions + particles */
+let reaction = null;
+function playReaction(type) { reaction = { type, t: 0 }; }
+
+const PARTICLE_COUNT = 46;
+const particlePos = new Float32Array(PARTICLE_COUNT * 3);
+const particleGeo = new THREE.BufferGeometry();
+particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+const particleMat = new THREE.PointsMaterial({ size: 0.045, transparent: true, opacity: 0, depthWrite: false, color: 0xffffff });
+const particles = new THREE.Points(particleGeo, particleMat);
+scene.add(particles);
+let particleVel = [];
+let particleLife = 999;
+function burst(colorHex) {
+  particleMat.color = new THREE.Color(colorHex);
+  particleMat.opacity = 1;
+  particleLife = 0;
+  particleVel = [];
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.random() * Math.PI;
+    const speed = 0.5 + Math.random() * 0.9;
+    particleVel.push([
+      Math.sin(phi) * Math.cos(theta) * speed,
+      Math.abs(Math.cos(phi)) * speed + 0.4,
+      Math.sin(phi) * Math.sin(theta) * speed,
+    ]);
+    particlePos[i * 3] = 0;
+    particlePos[i * 3 + 1] = 0.15;
+    particlePos[i * 3 + 2] = 0;
+  }
+  particleGeo.attributes.position.needsUpdate = true;
+}
+
+/* evolution ring: persistent halo that fades in once evoStage > 0 — a cheap
+   VFX-only "upgrade" cue since we don't have alternate 3D models to swap in. */
+const RING_COUNT = 60;
+const ringPos = new Float32Array(RING_COUNT * 3);
+for (let i = 0; i < RING_COUNT; i++) {
+  const a = (i / RING_COUNT) * Math.PI * 2;
+  const radius = 1.55 + Math.sin(a * 3) * 0.06;
+  ringPos[i * 3] = Math.cos(a) * radius;
+  ringPos[i * 3 + 1] = -0.55;
+  ringPos[i * 3 + 2] = Math.sin(a) * radius * 0.55;
+}
+const ringGeo = new THREE.BufferGeometry();
+ringGeo.setAttribute('position', new THREE.BufferAttribute(ringPos, 3));
+const ringMat = new THREE.PointsMaterial({ size: 0.05, transparent: true, opacity: 0, depthWrite: false, color: 0x4fd8e6 });
+const evoRing = new THREE.Points(ringGeo, ringMat);
+scene.add(evoRing);
+
+/* ================= actions ================= */
+function setButtonsDisabled(v) {
+  el.feedBtn.disabled = v; el.playBtn.disabled = v; el.cleanBtn.disabled = v;
+}
+function doAction(kind) {
+  setButtonsDisabled(true);
+  setTimeout(() => setButtonsDisabled(false), 550);
+  if (kind === 'feed') {
+    state.hunger = clamp01to100(state.hunger + 22);
+    pushLog('Porygon nourri (+22 faim)');
+    playReaction('feed');
+    burst(cssVar('--warn') || '#f0b84f');
+    awardXP(8);
+  } else if (kind === 'play') {
+    state.happy = clamp01to100(state.happy + 18);
+    state.hunger = clamp01to100(state.hunger - 2);
+    state.clean = clamp01to100(state.clean - 2);
+    pushLog('Session de jeu (+18 bonheur)');
+    playReaction('play');
+    burst(cssVar('--accent-2') || '#ff6fae');
+    awardXP(10);
+  } else if (kind === 'clean') {
+    state.clean = clamp01to100(state.clean + 25);
+    pushLog('Nettoyage effectue (+25 proprete)');
+    playReaction('clean');
+    burst(cssVar('--accent') || '#4fd8e6');
+    awardXP(8);
+  }
+  if (nightMode) wakePulse = 1;
+  saveState();
+  updateUI();
+}
+el.feedBtn.addEventListener('click', () => doAction('feed'));
+el.playBtn.addEventListener('click', () => doAction('play'));
+el.cleanBtn.addEventListener('click', () => doAction('clean'));
+el.shinyToggle.addEventListener('change', () => {
+  state.shiny = el.shinyToggle.checked;
+  buildModel(state.shiny ? 'shiny' : 'normal');
+  pushLog(state.shiny ? 'Forme chromatique activee' : 'Forme normale restauree');
+  saveState();
+  updateUI();
+});
+
+/* ================= hub mini-jeux ================= */
+const GAMES = [
+  { key: 'recal', icon: '&#9061;', title: 'Recalibrage du signal', desc: 'Stabilisez un marqueur oscillant dans la zone ciblee.', open: () => openRecal() },
+  { key: 'memory', icon: '&#9673;', title: 'Memoire de signal', desc: 'Memorisez puis reproduisez une sequence de signaux.', open: () => openMemory() },
+  { key: 'reflex', icon: '&#9651;', title: 'Capture de donnees', desc: "Touchez les fragments de donnees avant qu'ils ne disparaissent.", open: () => openReflex() },
+  { key: 'circuit', icon: '&#9637;', title: 'Puzzle de circuit', desc: 'Faites pivoter les segments pour relier le circuit.', open: () => openCircuit() },
+];
+function renderGamesHub() {
+  el.gamesHubList.innerHTML = GAMES.map((g) => {
+    const charges = state.gameCharges[g.key];
+    return '<div class="games-hub-item">'
+      + '<span class="games-hub-icon">' + g.icon + '</span>'
+      + '<div class="games-hub-info">'
+      + '<div class="games-hub-title">' + g.title + '</div>'
+      + '<div class="games-hub-desc">' + g.desc + '</div>'
+      + '<div class="games-hub-charges">' + charges + '/3 charges aujourd\'hui</div>'
+      + '</div>'
+      + '<button class="games-hub-play" data-game="' + g.key + '"' + (charges <= 0 ? ' disabled' : '') + '>Jouer</button>'
+      + '</div>';
+  }).join('');
+  el.gamesHubList.querySelectorAll('.games-hub-play').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const game = GAMES.find((g) => g.key === btn.dataset.game);
+      if (!game) return;
+      closeGamesHub();
+      game.open();
+    });
+  });
+}
+function openGamesHub() {
+  renderGamesHub();
+  el.gamesOverlay.hidden = false;
+}
+function closeGamesHub() { el.gamesOverlay.hidden = true; }
+el.gamesBtn.addEventListener('click', openGamesHub);
+el.gamesCloseBtn.addEventListener('click', closeGamesHub);
+el.gamesOverlay.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+/* ================= mini-jeu de recalibration ================= */
+let recalActive = false, recalRAF = null, recalT = 0;
+let recalZoneCenter = 0.5, recalZoneHalf = 0.14, recalSpeed = 2.2, recalWobbleFreq = 0, recalWobblePhase = 0;
+
+// two mismatched sine frequencies combined so the marker's rhythm can't be
+// learned from a single period — a real skill-tester instead of a metronome.
+function recalMarkerPos(t) {
+  const primary = Math.sin(t * recalSpeed);
+  const wobble = recalWobbleFreq > 0 ? Math.sin(t * recalWobbleFreq + recalWobblePhase) : 0;
+  return 0.5 + 0.46 * (0.72 * primary + 0.28 * wobble);
+}
+function openRecal() {
+  if (state.gameCharges.recal <= 0 || recalActive) return;
+  const difficultyLevel = Math.min(state.level, 18);
+  recalZoneHalf = Math.max(0.045, 0.13 - difficultyLevel * 0.0065);
+  recalZoneCenter = 0.2 + Math.random() * 0.6;
+  recalSpeed = 2.0 + difficultyLevel * 0.12 + Math.random() * 0.5;
+  recalWobbleFreq = difficultyLevel >= 4 ? recalSpeed * (1.8 + Math.random() * 0.9) : 0;
+  recalWobblePhase = Math.random() * Math.PI * 2;
+  el.recalZone.style.left = ((recalZoneCenter - recalZoneHalf) * 100).toFixed(1) + '%';
+  el.recalZone.style.width = (recalZoneHalf * 2 * 100).toFixed(1) + '%';
+  el.recalResult.textContent = ' ';
+  el.recalOverlay.hidden = false;
+  recalActive = true;
+  recalT = 0;
+  recalRAF = requestAnimationFrame(recalTick);
+}
+function closeRecal() {
+  recalActive = false;
+  if (recalRAF) cancelAnimationFrame(recalRAF);
+  el.recalOverlay.hidden = true;
+}
+function recalTick(ts) {
+  if (!recalActive) return;
+  recalT += 1 / 60;
+  const pos = recalMarkerPos(recalT);
+  el.recalMarker.style.left = (pos * 100).toFixed(1) + '%';
+  recalRAF = requestAnimationFrame(recalTick);
+}
+function resolveRecal() {
+  if (!recalActive) return;
+  const markerPos = recalMarkerPos(recalT);
+  const dist = Math.abs(markerPos - recalZoneCenter);
+  state.gameCharges.recal = Math.max(0, state.gameCharges.recal - 1);
+  let text, xp, statBoost;
+  if (dist <= recalZoneHalf * 0.35) { text = 'PARFAIT'; xp = 25; statBoost = 12; }
+  else if (dist <= recalZoneHalf * 0.85) { text = 'BIEN'; xp = 12; statBoost = 6; }
+  else { text = 'RATE'; xp = 3; statBoost = 0; }
+  el.recalResult.textContent = text;
+  if (statBoost > 0) {
+    state.hunger = clamp01to100(state.hunger + statBoost);
+    state.happy = clamp01to100(state.happy + statBoost);
+    state.clean = clamp01to100(state.clean + statBoost);
+  }
+  pushLog('Recalibrage : ' + text + ' (+' + xp + ' XP)');
+  awardXP(xp);
+  if (nightMode) wakePulse = 1;
+  saveState();
+  updateUI();
+  recalActive = false;
+  if (recalRAF) cancelAnimationFrame(recalRAF);
+  setTimeout(closeRecal, 900);
+}
+el.recalCloseBtn.addEventListener('click', closeRecal);
+el.recalHitBtn.addEventListener('click', resolveRecal);
+el.recalTrack.addEventListener('click', resolveRecal);
+el.recalOverlay.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+/* ================= memoire de signal ================= */
+let memSequence = [];
+let memPlayerIdx = 0;
+let memActive = false, memPlaying = false;
+const MEM_COLORS_COUNT = 6;
+
+function memMaxLen() { return Math.min(14, 5 + Math.floor(state.level / 2)); }
+// flashes get shorter and snappier as the sequence grows, so late rounds
+// demand real focus rather than just patience
+function memFlashDuration(len) { return Math.max(190, 380 - len * 14); }
+function memGapDuration(len) { return Math.max(90, 180 - len * 8); }
+function memSleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+function memLightPad(idx, ms) {
+  return new Promise((resolve) => {
+    const pad = el.memoryPads[idx];
+    pad.classList.add('lit');
+    setTimeout(() => { pad.classList.remove('lit'); resolve(); }, ms || 380);
+  });
+}
+function setMemPadsEnabled(v) { el.memoryPads.forEach((p) => { p.disabled = !v; }); }
+function memAddStep() { memSequence.push(Math.floor(Math.random() * MEM_COLORS_COUNT)); }
+
+function openMemory() {
+  if (state.gameCharges.memory <= 0 || memActive) return;
+  memActive = true;
+  memPlaying = false;
+  memSequence = [];
+  memPlayerIdx = 0;
+  el.memoryResult.textContent = ' ';
+  el.memoryStatus.textContent = 'Sequence : 0';
+  el.memoryHint.textContent = 'Observez la sequence, puis reproduisez-la';
+  el.memoryStartBtn.disabled = false;
+  setMemPadsEnabled(false);
+  el.memoryOverlay.hidden = false;
+}
+function closeMemory() {
+  memActive = false;
+  memPlaying = false;
+  el.memoryOverlay.hidden = true;
+}
+async function memPlayback() {
+  memPlaying = true;
+  setMemPadsEnabled(false);
+  el.memoryHint.textContent = 'Observez...';
+  await memSleep(500);
+  const flashMs = memFlashDuration(memSequence.length);
+  const gapMs = memGapDuration(memSequence.length);
+  for (let i = 0; i < memSequence.length; i++) {
+    await memLightPad(memSequence[i], flashMs);
+    await memSleep(gapMs);
+  }
+  memPlaying = false;
+  memPlayerIdx = 0;
+  el.memoryHint.textContent = 'A vous : reproduisez la sequence';
+  setMemPadsEnabled(true);
+}
+function memHandlePadClick(idx) {
+  if (!memActive || memPlaying) return;
+  memLightPad(idx);
+  if (idx !== memSequence[memPlayerIdx]) { memResolve(false); return; }
+  memPlayerIdx++;
+  if (memPlayerIdx >= memSequence.length) {
+    if (memSequence.length >= memMaxLen()) { memResolve(true); return; }
+    setMemPadsEnabled(false);
+    el.memoryStatus.textContent = 'Sequence : ' + memSequence.length;
+    setTimeout(() => { memAddStep(); memPlayback(); }, 650);
+  }
+}
+function memResolve(success) {
+  const len = success ? memSequence.length : memPlayerIdx;
+  memActive = false;
+  memPlaying = false;
+  setMemPadsEnabled(false);
+  state.gameCharges.memory = Math.max(0, state.gameCharges.memory - 1);
+  let text, xp, statBoost;
+  if (success) { text = 'PARFAIT'; xp = 25; statBoost = 12; }
+  else if (len >= 4) { text = 'BIEN'; xp = 12; statBoost = 6; }
+  else { text = 'RATE'; xp = 3; statBoost = 0; }
+  el.memoryResult.textContent = text + ' (sequence ' + len + ')';
+  if (statBoost > 0) {
+    state.hunger = clamp01to100(state.hunger + statBoost);
+    state.happy = clamp01to100(state.happy + statBoost);
+    state.clean = clamp01to100(state.clean + statBoost);
+  }
+  pushLog('Memoire de signal : ' + text + ' (+' + xp + ' XP)');
+  awardXP(xp);
+  if (nightMode) wakePulse = 1;
+  saveState();
+  updateUI();
+  setTimeout(closeMemory, 1100);
+}
+el.memoryStartBtn.addEventListener('click', () => {
+  if (!memActive || memPlaying || memSequence.length > 0) return;
+  el.memoryStartBtn.disabled = true;
+  memAddStep();
+  memPlayback();
+});
+el.memoryCloseBtn.addEventListener('click', closeMemory);
+el.memoryOverlay.addEventListener('pointerdown', (e) => e.stopPropagation());
+el.memoryPads.forEach((pad) => {
+  pad.addEventListener('click', () => memHandlePadClick(Number(pad.dataset.pad)));
+});
+
+/* ================= reflexes / capture de donnees ================= */
+let reflexActive = false, reflexTimer = null, reflexSpawnTimeout = null;
+let reflexHits = 0, reflexMisses = 0, reflexTimeLeft = 0;
+const REFLEX_DURATION = 12;
+
+function openReflex() {
+  if (state.gameCharges.reflex <= 0 || reflexActive) return;
+  reflexHits = 0; reflexMisses = 0;
+  el.reflexResult.textContent = ' ';
+  el.reflexStatus.textContent = 'Pret';
+  el.reflexArea.innerHTML = '';
+  el.reflexTimerFill.style.width = '100%';
+  el.reflexStartBtn.disabled = false;
+  el.reflexOverlay.hidden = false;
+}
+function closeReflex() {
+  reflexActive = false;
+  if (reflexTimer) clearInterval(reflexTimer);
+  if (reflexSpawnTimeout) clearTimeout(reflexSpawnTimeout);
+  el.reflexArea.innerHTML = '';
+  el.reflexOverlay.hidden = true;
+}
+function reflexScheduleNext() {
+  if (!reflexActive) return;
+  reflexSpawnTimeout = setTimeout(reflexSpawn, 150 + Math.random() * 180);
+}
+function reflexUpdateStatus() {
+  el.reflexStatus.textContent = 'Touches : ' + reflexHits + ' / Ratees : ' + reflexMisses;
+}
+// from level 3+, a decoy (crossed-out, danger-colored) target sometimes spawns
+// alongside the real one — clicking it costs a miss, so it's no longer pure
+// reflex: the player has to actually look before tapping.
+function reflexSpawn() {
+  if (!reflexActive) return;
+  el.reflexArea.innerHTML = '';
+  const areaW = el.reflexArea.clientWidth || 220;
+  const areaH = el.reflexArea.clientHeight || 150;
+  const difficultyLevel = Math.min(state.level, 15);
+  const life = Math.max(360, 900 - difficultyLevel * 30);
+  const decoyChance = difficultyLevel >= 3 ? Math.min(0.6, 0.15 + difficultyLevel * 0.035) : 0;
+  const spawnDecoy = Math.random() < decoyChance;
+  let pending = spawnDecoy ? 2 : 1;
+  function onResolved() { pending--; if (pending <= 0) reflexScheduleNext(); }
+  function randomPos() {
+    return {
+      x: Math.random() * Math.max(0, areaW - 34),
+      y: Math.random() * Math.max(0, areaH - 34),
+    };
+  }
+  const realPos = randomPos();
+  const real = document.createElement('div');
+  real.className = 'reflex-target';
+  real.style.left = realPos.x + 'px';
+  real.style.top = realPos.y + 'px';
+  let realDone = false;
+  real.addEventListener('click', () => {
+    if (realDone) return;
+    realDone = true;
+    reflexHits++;
+    reflexUpdateStatus();
+    real.remove();
+    onResolved();
+  });
+  el.reflexArea.appendChild(real);
+  setTimeout(() => {
+    if (realDone || !reflexActive) return;
+    realDone = true;
+    reflexMisses++;
+    reflexUpdateStatus();
+    real.remove();
+    onResolved();
+  }, life);
+
+  if (spawnDecoy) {
+    let decoyPos = randomPos(), tries = 0;
+    while (tries < 6 && Math.abs(decoyPos.x - realPos.x) < 40 && Math.abs(decoyPos.y - realPos.y) < 40) {
+      decoyPos = randomPos();
+      tries++;
+    }
+    const decoy = document.createElement('div');
+    decoy.className = 'reflex-target reflex-decoy';
+    decoy.style.left = decoyPos.x + 'px';
+    decoy.style.top = decoyPos.y + 'px';
+    let decoyDone = false;
+    decoy.addEventListener('click', () => {
+      if (decoyDone) return;
+      decoyDone = true;
+      reflexMisses++;
+      reflexUpdateStatus();
+      decoy.remove();
+      onResolved();
+    });
+    el.reflexArea.appendChild(decoy);
+    setTimeout(() => {
+      if (decoyDone || !reflexActive) return;
+      decoyDone = true;
+      // left alone until it expires = correctly avoided, no penalty
+      decoy.remove();
+      onResolved();
+    }, life);
+  }
+}
+function reflexStart() {
+  if (state.gameCharges.reflex <= 0 || reflexActive) return;
+  reflexActive = true;
+  reflexHits = 0; reflexMisses = 0;
+  reflexTimeLeft = REFLEX_DURATION;
+  el.reflexStartBtn.disabled = true;
+  el.reflexResult.textContent = ' ';
+  reflexSpawn();
+  reflexTimer = setInterval(() => {
+    reflexTimeLeft -= 0.2;
+    el.reflexTimerFill.style.width = Math.max(0, (reflexTimeLeft / REFLEX_DURATION) * 100).toFixed(0) + '%';
+    if (reflexTimeLeft <= 0) resolveReflex();
+  }, 200);
+}
+function resolveReflex() {
+  if (reflexTimer) clearInterval(reflexTimer);
+  if (reflexSpawnTimeout) clearTimeout(reflexSpawnTimeout);
+  reflexActive = false;
+  el.reflexArea.innerHTML = '';
+  const total = reflexHits + reflexMisses;
+  const ratio = total > 0 ? reflexHits / total : 0;
+  state.gameCharges.reflex = Math.max(0, state.gameCharges.reflex - 1);
+  let text, xp, statBoost;
+  if (ratio >= 0.8 && reflexHits >= 6) { text = 'PARFAIT'; xp = 25; statBoost = 12; }
+  else if (ratio >= 0.5 && reflexHits >= 3) { text = 'BIEN'; xp = 12; statBoost = 6; }
+  else { text = 'RATE'; xp = 3; statBoost = 0; }
+  el.reflexResult.textContent = text + ' (' + reflexHits + ' captures)';
+  if (statBoost > 0) {
+    state.hunger = clamp01to100(state.hunger + statBoost);
+    state.happy = clamp01to100(state.happy + statBoost);
+    state.clean = clamp01to100(state.clean + statBoost);
+  }
+  pushLog('Capture de donnees : ' + text + ' (+' + xp + ' XP)');
+  awardXP(xp);
+  if (nightMode) wakePulse = 1;
+  saveState();
+  updateUI();
+  setTimeout(closeReflex, 1100);
+}
+el.reflexStartBtn.addEventListener('click', reflexStart);
+el.reflexCloseBtn.addEventListener('click', closeReflex);
+el.reflexOverlay.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+/* ================= puzzle de circuit ================= */
+// path pool grows with level: short (3 rotatable tiles) up to level 4, medium
+// (5 tiles) from level 5, and a full grid-spanning Hamiltonian route (7 tiles)
+// from level 11 — genuinely more segments to reason about, not just a faster timer.
+const CIRCUIT_PATHS_SHORT = [
+  [0, 1, 2, 5, 8],
+  [0, 3, 6, 7, 8],
+  [0, 1, 4, 5, 8],
+  [0, 3, 4, 5, 8],
+  [0, 1, 4, 7, 8],
+  [0, 3, 4, 7, 8],
+];
+const CIRCUIT_PATHS_MEDIUM = [
+  [0, 1, 4, 3, 6, 7, 8],
+  [0, 3, 4, 1, 2, 5, 8],
+  [0, 3, 6, 7, 4, 5, 8],
+  [0, 1, 2, 5, 4, 7, 8],
+];
+const CIRCUIT_PATHS_LONG = [
+  [0, 1, 2, 5, 4, 3, 6, 7, 8],
+  [0, 3, 6, 7, 4, 1, 2, 5, 8],
+];
+function circuitPoolForLevel(level) {
+  if (level >= 11) return CIRCUIT_PATHS_LONG;
+  if (level >= 5) return CIRCUIT_PATHS_MEDIUM;
+  return CIRCUIT_PATHS_SHORT;
+}
+const DIR_ORDER = ['top', 'right', 'bottom', 'left'];
+function circuitDirBetween(a, b) {
+  const colA = a % 3, rowA = Math.floor(a / 3);
+  const colB = b % 3, rowB = Math.floor(b / 3);
+  if (colB > colA) return 'right';
+  if (colB < colA) return 'left';
+  if (rowB > rowA) return 'bottom';
+  return 'top';
+}
+function circuitRotateDir(dir, r) { return DIR_ORDER[(DIR_ORDER.indexOf(dir) + r) % 4]; }
+function circuitRotateSet(set, r) { return new Set(Array.from(set).map((d) => circuitRotateDir(d, r))); }
+function circuitSetsEqual(a, b) {
+  if (a.size !== b.size) return false;
+  for (const v of a) if (!b.has(v)) return false;
+  return true;
+}
+
+let circuitActive = false, circuitTiles = null, circuitPath = null, circuitTimer = null, circuitTimeLeft = 0;
+let circuitDuration = 25;
+
+function circuitBuild() {
+  const pool = circuitPoolForLevel(state.level);
+  circuitPath = pool[Math.floor(Math.random() * pool.length)];
+  circuitTiles = {};
+  for (let i = 0; i < circuitPath.length; i++) {
+    const idx = circuitPath[i];
+    if (i === 0 || i === circuitPath.length - 1) {
+      const neighbor = i === 0 ? circuitPath[1] : circuitPath[circuitPath.length - 2];
+      const dir = circuitDirBetween(idx, neighbor);
+      circuitTiles[idx] = { base: new Set([dir]), rotation: 0, needed: null, isPath: true, isAnchor: true };
+      continue;
+    }
+    const prevDir = circuitDirBetween(idx, circuitPath[i - 1]);
+    const nextDir = circuitDirBetween(idx, circuitPath[i + 1]);
+    const needed = new Set([prevDir, nextDir]);
+    const isStraight = (prevDir === 'top' && nextDir === 'bottom') || (prevDir === 'bottom' && nextDir === 'top')
+      || (prevDir === 'left' && nextDir === 'right') || (prevDir === 'right' && nextDir === 'left');
+    const base = isStraight ? new Set(['top', 'bottom']) : new Set(['top', 'right']);
+    let rotation = Math.floor(Math.random() * 4);
+    if (circuitSetsEqual(circuitRotateSet(base, rotation), needed)) rotation = (rotation + 1) % 4;
+    circuitTiles[idx] = { base, rotation, needed, isPath: true, isAnchor: false };
+  }
+}
+function circuitRender() {
+  el.circuitGrid.innerHTML = '';
+  for (let idx = 0; idx < 9; idx++) {
+    const tile = document.createElement('div');
+    tile.className = 'circuit-tile';
+    const info = circuitTiles[idx];
+    if (info) {
+      tile.classList.toggle('anchor', info.isAnchor);
+      tile.classList.toggle('interactive', info.isPath && !info.isAnchor);
+      const inner = document.createElement('div');
+      inner.className = 'circuit-tile-inner';
+      inner.style.transform = 'rotate(' + (info.rotation * 90) + 'deg)';
+      Array.from(info.base).forEach((dir) => {
+        const bar = document.createElement('div');
+        bar.className = 'circuit-bar ' + dir;
+        inner.appendChild(bar);
+      });
+      tile.appendChild(inner);
+      if (info.isAnchor) {
+        const dot = document.createElement('div');
+        dot.className = 'circuit-tile-dot';
+        tile.appendChild(dot);
+      }
+      if (info.isPath && !info.isAnchor) {
+        tile.addEventListener('click', () => circuitRotateTile(idx));
+      }
+    }
+    el.circuitGrid.appendChild(tile);
+  }
+}
+function circuitRotateTile(idx) {
+  if (!circuitActive) return;
+  const info = circuitTiles[idx];
+  if (!info || info.isAnchor) return;
+  info.rotation = (info.rotation + 1) % 4;
+  const tileEl = el.circuitGrid.children[idx].querySelector('.circuit-tile-inner');
+  if (tileEl) tileEl.style.transform = 'rotate(' + (info.rotation * 90) + 'deg)';
+  if (circuitCheckSolved()) resolveCircuit(true);
+}
+function circuitCheckSolved() {
+  return circuitPath.every((idx) => {
+    const info = circuitTiles[idx];
+    if (info.isAnchor) return true;
+    return circuitSetsEqual(circuitRotateSet(info.base, info.rotation), info.needed);
+  });
+}
+function openCircuit() {
+  if (state.gameCharges.circuit <= 0 || circuitActive) return;
+  circuitBuild();
+  circuitRender();
+  const interiorCount = circuitPath.length - 2;
+  const difficultyLevel = Math.min(state.level, 18);
+  circuitDuration = Math.max(13, 9 + interiorCount * 4.2 - difficultyLevel * 0.35);
+  circuitActive = true;
+  circuitTimeLeft = circuitDuration;
+  el.circuitResult.textContent = ' ';
+  el.circuitTimerFill.style.width = '100%';
+  el.circuitOverlay.hidden = false;
+  circuitTimer = setInterval(() => {
+    circuitTimeLeft -= 0.2;
+    el.circuitTimerFill.style.width = Math.max(0, (circuitTimeLeft / circuitDuration) * 100).toFixed(0) + '%';
+    if (circuitTimeLeft <= 0) resolveCircuit(false);
+  }, 200);
+}
+function closeCircuit() {
+  circuitActive = false;
+  if (circuitTimer) clearInterval(circuitTimer);
+  el.circuitOverlay.hidden = true;
+}
+function resolveCircuit(success) {
+  if (!circuitActive) return;
+  circuitActive = false;
+  if (circuitTimer) clearInterval(circuitTimer);
+  const fraction = circuitTimeLeft / circuitDuration;
+  state.gameCharges.circuit = Math.max(0, state.gameCharges.circuit - 1);
+  let text, xp, statBoost;
+  if (success && fraction >= 0.5) { text = 'PARFAIT'; xp = 25; statBoost = 12; }
+  else if (success) { text = 'BIEN'; xp = 12; statBoost = 6; }
+  else { text = 'RATE'; xp = 3; statBoost = 0; }
+  el.circuitResult.textContent = text;
+  if (statBoost > 0) {
+    state.hunger = clamp01to100(state.hunger + statBoost);
+    state.happy = clamp01to100(state.happy + statBoost);
+    state.clean = clamp01to100(state.clean + statBoost);
+  }
+  pushLog('Puzzle de circuit : ' + text + ' (+' + xp + ' XP)');
+  awardXP(xp);
+  if (nightMode) wakePulse = 1;
+  saveState();
+  updateUI();
+  setTimeout(closeCircuit, 1200);
+}
+el.circuitCloseBtn.addEventListener('click', closeCircuit);
+el.circuitOverlay.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+/* ================= evenements aleatoires ================= */
+const EVENTS_DAY = [
+  { text: 'Porygon a repere une anomalie mineure — signal stabilise automatiquement.', xp: 5 },
+  { text: 'Fragment de donnees recupere dans le flux ambiant.', xp: 8 },
+  { text: 'Porygon a effectue une auto-verification de routine.', xp: 4 },
+  { text: 'Un pic de curiosite traverse ses circuits.', xp: 6 },
+];
+const EVENTS_NIGHT = [
+  { text: 'Porygon somnole doucement dans la grille.', xp: 0 },
+  { text: 'Veille passive : consommation reduite au minimum.', xp: 2 },
+  { text: 'Un leger scintillement traverse sa surface endormie.', xp: 3 },
+];
+function maybeTriggerRandomEvent() {
+  const now = Date.now();
+  if (now - state.lastEventAt < 4 * 60 * 1000) return;
+  if (Math.random() > 0.35) return;
+  const pool = nightMode ? EVENTS_NIGHT : EVENTS_DAY;
+  const ev = pool[Math.floor(Math.random() * pool.length)];
+  state.lastEventAt = now;
+  pushLog(ev.text + (ev.xp > 0 ? ' (+' + ev.xp + ' XP)' : ''));
+  if (ev.xp > 0) awardXP(ev.xp);
+  saveState();
+  updateUI();
+}
+
+/* ================= organic idle motion ================= */
+/* layered sine waves with mismatched (irrational-ish) frequencies read as
+   soft, non-repeating "aliveness" rather than a real Perlin noise field —
+   much cheaper and plenty convincing at this scale. */
+function driftNoise(t, seed) {
+  return Math.sin(t * 0.9 + seed * 12.9) * 0.5
+       + Math.sin(t * 1.7 + seed * 4.3) * 0.3
+       + Math.sin(t * 3.31 + seed * 7.7) * 0.2;
+}
+
+/* breathing: asymmetric cycle (slightly quicker "inhale", slower settle)
+   instead of a plain sine, so the rise/fall doesn't feel mechanically even. */
+const BREATH_PERIOD = 3.4;
+function breathCurve(phase) {
+  const warped = phase < 0.42 ? (phase / 0.42) * 0.5 : 0.5 + ((phase - 0.42) / 0.58) * 0.5;
+  return Math.sin(warped * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5; // 0..1
+}
+
+/* eye: periodic blink (eyelid-style vertical squash) + a slow independent
+   "glance" that shifts the pupil texture inside its socket via UV offset. */
+let nextBlinkAt = 1.2 + Math.random() * 2.5;
+let blinking = false, blinkT = 0;
+const BLINK_DUR = 0.16;
+function doubleBlinkChance() { return Math.random() < 0.22; }
+let queuedBlink = 0;
+
+/* day/night: real local time drives a "sleep" mode — slower breathing, drowsy
+   half-closed eyes, dampened glance, reduced stat decay (see loadState). */
+nightMode = isNightHour(new Date().getHours());
+
+/* ================= render loop ================= */
+const clock = new THREE.Clock();
+let extraSpin = 0;
+
+function tick() {
+  const dt = Math.min(0.05, clock.getDelta());
+  const t = clock.elapsedTime;
+
+  if (!dragging && !prefersReducedMotion) rotY += spin * dt;
+
+  let bounceExtra = 0, pulseScale = 1;
+  if (reaction) {
+    reaction.t += dt;
+    const p = reaction.t;
+    if (reaction.type === 'feed') {
+      bounceExtra = Math.abs(Math.sin(p * 13)) * Math.max(0, 1 - p * 1.8) * 0.15;
+      if (p > 0.65) reaction = null;
+    } else if (reaction.type === 'play') {
+      extraSpin += dt * 9 * Math.max(0, 1 - p);
+      if (p > 0.85) reaction = null;
+    } else if (reaction.type === 'clean') {
+      pulseScale = 1 + Math.sin(Math.min(p, 0.5) * Math.PI) * 0.08;
+      if (p > 0.7) reaction = null;
+    } else if (reaction.type === 'levelup') {
+      bounceExtra = Math.abs(Math.sin(p * 10)) * Math.max(0, 1 - p * 1.2) * 0.22;
+      extraSpin += dt * 14 * Math.max(0, 1 - p);
+      if (p > 1.0) reaction = null;
+    }
+  }
+  extraSpin *= 0.9;
+
+  if (prefersReducedMotion) {
+    group.rotation.y = rotY + extraSpin;
+    group.rotation.x = rotX;
+    group.position.set(0, bounceExtra, 0);
+    group.scale.setScalar(pulseScale);
+  } else {
+    // organic breathing: eased rise/fall + gentle volume-preserving squash & stretch
+    const breathPeriod = nightMode ? BREATH_PERIOD * 1.7 : BREATH_PERIOD;
+    const breathPhase = (t % breathPeriod) / breathPeriod;
+    const breath = breathCurve(breathPhase);
+    const breathY = breath * 0.05;
+    const stretchY = breath * 0.022;
+
+    // micro-jitter: tiny irregular sway so the loop never reads as perfectly repeating
+    const jitterRotY = driftNoise(t, 1.0) * 0.012;
+    const jitterRotX = driftNoise(t, 5.4) * 0.008;
+    const jitterRotZ = driftNoise(t, 9.1) * 0.01;
+    const jitterX = driftNoise(t, 2.6) * 0.012;
+    const jitterZ = driftNoise(t, 6.8) * 0.01;
+
+    group.rotation.y = rotY + extraSpin + jitterRotY;
+    group.rotation.x = rotX + jitterRotX;
+    group.rotation.z = jitterRotZ;
+    group.position.set(jitterX, breathY + bounceExtra, jitterZ);
+    group.scale.set(
+      pulseScale * (1 - stretchY * 0.5),
+      pulseScale * (1 + stretchY),
+      pulseScale * (1 - stretchY * 0.5)
+    );
+
+    wakePulse = Math.max(0, wakePulse - dt * 0.7);
+    const drowsy = nightMode && wakePulse < 0.5;
+
+    let eyeCloseAmt = 0;
+    if (drowsy) {
+      // asleep: eyes ride a slow noise-driven near-closed baseline instead of
+      // the normal periodic blink, and a care action briefly "wakes" them
+      // (wakePulse) by fading this baseline back toward fully open.
+      const drowsyBase = 0.6 + driftNoise(t * 0.2, 4.4) * 0.25;
+      eyeCloseAmt = Math.max(0, drowsyBase * (1 - wakePulse));
+    } else {
+      // eye: blink cycle
+      if (!blinking && t >= nextBlinkAt) {
+        blinking = true; blinkT = 0;
+        queuedBlink = doubleBlinkChance() ? 1 : 0;
+      }
+      if (blinking) {
+        blinkT += dt;
+        const p = blinkT / BLINK_DUR;
+        if (p >= 1) {
+          if (queuedBlink > 0) { queuedBlink--; blinkT = 0; }
+          else { blinking = false; nextBlinkAt = t + 2.2 + Math.random() * 4.5; }
+        } else {
+          eyeCloseAmt = p < 0.4 ? (p / 0.4) : Math.max(0, 1 - (p - 0.4) / 0.6);
+        }
+      }
+    }
+    // no eyelid geometry exists on this asset, so a literal squash exposes the
+    // empty eye-socket cutout behind it — dimming the disc toward near-black
+    // instead reads as the eye closing/glazing over, with no geometry gap.
+    if (eyeMat) eyeMat.color.setScalar(1 - eyeCloseAmt * 0.94);
+
+    // eye: slow independent "glance" — pupil drifts inside the socket via UV offset
+    // (dampened while drowsy — a sleeping Porygon shouldn't dart its eyes around)
+    if (eyeColorTex) {
+      const glanceAmt = drowsy ? 0.15 : 1;
+      eyeColorTex.offset.set(
+        driftNoise(t * 0.35, 3.2) * 0.05 * glanceAmt,
+        driftNoise(t * 0.35, 8.6) * 0.035 * glanceAmt
+      );
+    }
+  }
+
+  // evolution ring: fades in / speeds up / recolors per evolution stage
+  if (state.evoStage > 0) {
+    const stage2 = state.evoStage >= 2;
+    evoRing.rotation.y += dt * (stage2 ? 0.9 : 0.45);
+    ringMat.opacity = stage2 ? 0.85 : 0.55;
+    ringMat.color.setStyle(stage2 ? (cssVar('--accent-2') || '#ff6fae') : (cssVar('--accent') || '#4fd8e6'));
+    ringMat.size = stage2 ? 0.065 : 0.05;
+  } else {
+    ringMat.opacity = 0;
+  }
+
+  if (particleMat.opacity > 0) {
+    particleLife += dt;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particlePos[i * 3] += particleVel[i][0] * dt;
+      particlePos[i * 3 + 1] += (particleVel[i][1] - particleLife * 1.1) * dt;
+      particlePos[i * 3 + 2] += particleVel[i][2] * dt;
+    }
+    particleGeo.attributes.position.needsUpdate = true;
+    particleMat.opacity = Math.max(0, 1 - particleLife * 1.15);
+  }
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+tick();
+
+/* ================= ticking stat decay + autosave ================= */
+setInterval(() => {
+  const fresh = loadState();
+  // merge decay without discarding same-session log/shiny already in memory
+  state.hunger = fresh.hunger; state.happy = fresh.happy; state.clean = fresh.clean;
+  if (fresh.gameDate !== state.gameDate) { state.gameDate = fresh.gameDate; state.gameCharges = fresh.gameCharges; }
+  nightMode = isNightHour(new Date().getHours());
+  maybeTriggerRandomEvent();
+  updateUI();
+}, 20000);
+window.addEventListener('visibilitychange', () => { if (document.hidden) saveState(); });
+window.addEventListener('beforeunload', saveState);
+
+updateUI();
+</script>
+</body>
+</html>
